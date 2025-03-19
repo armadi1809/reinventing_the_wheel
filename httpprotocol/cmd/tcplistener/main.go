@@ -13,7 +13,6 @@ func main() {
 		panic("error setting up the listener")
 	}
 	defer listener.Close()
-	// treat connections
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
