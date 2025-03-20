@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"net"
-	"strings"
+
+	"github.com/armadi1809/reinventing_the_wheel/httpprotocol/internal/request"
 )
 
 func main() {
@@ -19,45 +19,12 @@ func main() {
 			panic("error accepting the connection")
 		}
 		fmt.Println("Connection accepted")
-
-		for line := range getLinesChannel(conn) {
-			fmt.Printf("%s\n", line)
+		request, err := request.RequestFromReader(conn)
+		if err != nil {
+			fmt.Printf("error parsing request from connection %v", err)
 		}
+		fmt.Printf("Request line:\n- Method: %s\n- Target: %s\n- Version: %s\n", request.RequestLine.Method, request.RequestLine.RequestTarget, request.RequestLine.HttpVersion)
 		fmt.Println("closing closed")
 	}
 
-}
-
-func getLinesChannel(f io.ReadCloser) <-chan string {
-	lineChannel := make(chan string)
-	go func() {
-		defer f.Close()
-		defer close(lineChannel)
-		data := make([]byte, 8)
-		line := ""
-		for {
-			n, err := f.Read(data)
-			if err != nil {
-				if err == io.EOF {
-					break
-				}
-				panic("an error occurred while reading the file")
-			}
-			parts := strings.Split(string(data[:n]), "\n")
-			if len(parts) == 1 {
-				line += parts[0]
-				continue
-			}
-			for i := range len(parts) - 1 {
-				line += parts[i]
-			}
-			lineChannel <- line
-			line = parts[len(parts)-1]
-		}
-		if len(line) > 0 {
-			lineChannel <- line
-		}
-		f.Close()
-	}()
-	return lineChannel
 }
