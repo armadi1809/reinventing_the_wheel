@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 
 	"github.com/armadi1809/reinventing_the_wheel/httpprotocol/internal/headers"
@@ -14,6 +15,7 @@ type Request struct {
 	RequestLine RequestLine
 	headers.Headers
 	state requestState
+	Body  []byte
 }
 
 type RequestLine struct {
@@ -27,6 +29,7 @@ type requestState int
 const (
 	requestStateInitialized requestState = iota
 	requestStateParsingHeaders
+	requestStateParsingBody
 	requestStateDone
 )
 
@@ -49,6 +52,9 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 		numBytesRead, err := reader.Read(buf[readToIndex:])
 		if err != nil {
 			if errors.Is(err, io.EOF) {
+				if req.state != requestStateDone {
+					return nil, fmt.Errorf("incomplete request")
+				}
 				req.state = requestStateDone
 				break
 			}
@@ -152,9 +158,28 @@ func (r *Request) parseSingle(data []byte) (int, error) {
 			return 0, err
 		}
 		if done {
-			r.state = requestStateDone
+			r.state = requestStateParsingBody
 		}
 		return n, nil
+	case requestStateParsingBody:
+		contentLength, err := strconv.Atoi(r.Headers.Get("content-length"))
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			r.state = requestStateDone
+			return len(data), nil
+		}
+		if r.Body == nil {
+			r.Body = []byte{}
+		}
+		r.Body = append(r.Body, data...)
+		if len(r.Body) > contentLength {
+			return 0, fmt.Errorf("data size is greater than size specified by content-length header")
+		}
+		if len(r.Body) == contentLength {
+			r.state = requestStateDone
+		}
+		return len(data), nil
+
 	default:
 		return 0, fmt.Errorf("unknown buffer state")
 	}

@@ -28,6 +28,9 @@ func main() {
 		for key, val := range request.Headers {
 			fmt.Println("- " + key + ": " + val)
 		}
+		if request.Body != nil {
+			fmt.Printf("Body:\n%s\n", string(request.Body))
+		}
 	}
 
 }
