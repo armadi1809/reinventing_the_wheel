@@ -24,7 +24,10 @@ func main() {
 			fmt.Printf("error parsing request from connection %v", err)
 		}
 		fmt.Printf("Request line:\n- Method: %s\n- Target: %s\n- Version: %s\n", request.RequestLine.Method, request.RequestLine.RequestTarget, request.RequestLine.HttpVersion)
-		fmt.Println("closing closed")
+		fmt.Println("Headers: ")
+		for key, val := range request.Headers {
+			fmt.Println("- " + key + ": " + val)
+		}
 	}
 
 }
