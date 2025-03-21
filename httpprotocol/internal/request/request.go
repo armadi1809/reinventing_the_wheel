@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/armadi1809/reinventing_the_wheel/httpprotocol/internal/headers"
 )
 
 type Request struct {
 	RequestLine RequestLine
-	state       requestState
+	headers.Headers
+	state requestState
 }
 
 type RequestLine struct {
@@ -23,6 +26,7 @@ type requestState int
 
 const (
 	requestStateInitialized requestState = iota
+	requestStateParsingHeaders
 	requestStateDone
 )
 
@@ -33,7 +37,8 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 	buf := make([]byte, bufferSize)
 	readToIndex := 0
 	req := &Request{
-		state: requestStateInitialized,
+		state:   requestStateInitialized,
+		Headers: headers.NewHeaders(),
 	}
 	for req.state != requestStateDone {
 		if readToIndex >= len(buf) {
@@ -112,6 +117,21 @@ func requestLineFromString(str string) (*RequestLine, error) {
 }
 
 func (r *Request) parse(data []byte) (int, error) {
+	totalBytesParsed := 0
+	for r.state != requestStateDone {
+		n, err := r.parseSingle(data[totalBytesParsed:])
+		if err != nil {
+			return totalBytesParsed, err
+		}
+		if n == 0 {
+			break
+		}
+		totalBytesParsed += n
+	}
+	return totalBytesParsed, nil
+}
+
+func (r *Request) parseSingle(data []byte) (int, error) {
 	switch r.state {
 	case requestStateDone:
 		return 0, fmt.Errorf("trying to parse data in done state")
@@ -124,10 +144,18 @@ func (r *Request) parse(data []byte) (int, error) {
 			return 0, nil
 		}
 		r.RequestLine = *requestLine
-		r.state = requestStateDone
+		r.state = requestStateParsingHeaders
+		return n, nil
+	case requestStateParsingHeaders:
+		n, done, err := r.Headers.Parse(data)
+		if err != nil {
+			return 0, err
+		}
+		if done {
+			r.state = requestStateDone
+		}
 		return n, nil
 	default:
 		return 0, fmt.Errorf("unknown buffer state")
 	}
-
 }
