@@ -10,29 +10,46 @@ import (
 
 type StatusCode int
 
+type Writer struct {
+	Writer io.Writer
+}
+
 const (
 	StatusCodeOk            StatusCode = 200
 	StatusCodeBadRequest    StatusCode = 400
 	StatusCodeInternalError StatusCode = 500
 )
 
-func WriteStatusLine(w io.Writer, statusCode StatusCode) {
+func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
+	_, err := WriteStatusLine(w.Writer, statusCode)
+	return err
+}
+
+func (w *Writer) WriteHeaders(headers headers.Headers) error {
+	return WriteHeaders(w.Writer, headers)
+}
+
+func (w *Writer) WriteBody(p []byte) (int, error) {
+	return w.Writer.Write(p)
+}
+
+func WriteStatusLine(w io.Writer, statusCode StatusCode) (int, error) {
 	switch statusCode {
 	case StatusCodeOk:
-		w.Write([]byte("HTTP/1.1 200 OK"))
+		return w.Write([]byte("HTTP/1.1 200 OK\r\n"))
 	case StatusCodeBadRequest:
-		w.Write([]byte("HTTP/1.1 400 Bad Request"))
+		return w.Write([]byte("HTTP/1.1 400 Bad Request\r\n"))
 	case StatusCodeInternalError:
-		w.Write([]byte("HTTP/1.1 500 Internal Server Error"))
+		return w.Write([]byte("HTTP/1.1 500 Internal Server Error\r\n"))
 	}
-	w.Write([]byte("\r\n"))
+	return w.Write([]byte("\r\n"))
 }
 
 func GetDefaultHeaders(contentLen int) headers.Headers {
 	headers := headers.NewHeaders()
 	headers.Set("content-length", strconv.Itoa(contentLen))
 	headers.Set("connection", "close")
-	headers.Set("content-type", "text/plain")
+	headers.Set("content-type", "text/html")
 	return headers
 }
 

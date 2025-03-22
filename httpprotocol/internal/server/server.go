@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -23,7 +22,7 @@ type HandleError struct {
 	response.StatusCode
 }
 
-type Handler func(w io.Writer, req *request.Request) *HandleError
+type Handler func(w *response.Writer, req *request.Request)
 
 func Serve(port int, handler Handler) (*Server, error) {
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
@@ -63,7 +62,6 @@ func (s *Server) listen() {
 
 func (s *Server) handle(conn net.Conn) {
 	defer conn.Close()
-	handlerBuffer := bytes.NewBuffer(nil)
 	request, err := request.RequestFromReader(conn)
 	if err != nil {
 		herr := &HandleError{
@@ -73,20 +71,10 @@ func (s *Server) handle(conn net.Conn) {
 		herr.write(conn)
 		return
 	}
-	handleErr := s.handler(handlerBuffer, request)
-	if handleErr != nil {
-		handleErr.write(conn)
-		return
+	w := &response.Writer{
+		Writer: conn,
 	}
-
-	response.WriteStatusLine(conn, response.StatusCodeOk)
-	headers := response.GetDefaultHeaders(handlerBuffer.Len())
-	err = response.WriteHeaders(conn, headers)
-	if err != nil {
-		fmt.Printf("error writing headers: %v\n", err)
-		return
-	}
-	conn.Write(handlerBuffer.Bytes())
+	s.handler(w, request)
 }
 
 func (he HandleError) write(w io.Writer) {

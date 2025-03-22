@@ -1,18 +1,29 @@
 package main
 
 import (
-	"io"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/armadi1809/reinventing_the_wheel/httpprotocol/internal/headers"
 	"github.com/armadi1809/reinventing_the_wheel/httpprotocol/internal/request"
 	"github.com/armadi1809/reinventing_the_wheel/httpprotocol/internal/response"
 	"github.com/armadi1809/reinventing_the_wheel/httpprotocol/internal/server"
 )
 
 const port = 42069
+
+const htmlTemplate = `<html>
+  <head>
+    <title>%s</title>
+  </head>
+  <body>
+    <h1>%s</h1>
+    <p>%s</p>
+  </body>
+</html>`
 
 func main() {
 	server, err := server.Serve(port, handler)
@@ -28,14 +39,35 @@ func main() {
 	log.Println("Server gracefully stopped")
 }
 
-func handler(w io.Writer, req *request.Request) *server.HandleError {
+func handler(w *response.Writer, req *request.Request) {
+	var headers headers.Headers
 	switch req.RequestLine.RequestTarget {
 	case "/yourproblem":
-		return &server.HandleError{StatusCode: response.StatusCodeBadRequest, Message: "Your problem is not my problem\n"}
+		body := "Your request honestly kinda sucked."
+		title := "400 Bad Request"
+		header := "Bad Request"
+		message := fmt.Sprintf(htmlTemplate, title, header, body)
+		w.WriteStatusLine(response.StatusCodeBadRequest)
+		headers = response.GetDefaultHeaders(len(message))
+		w.WriteHeaders(headers)
+		w.WriteBody([]byte(message))
 	case "/myproblem":
-		return &server.HandleError{StatusCode: response.StatusCodeInternalError, Message: "Woopsie, my bad\n"}
+		body := "Okay, you know what? This one is on me."
+		title := "500 Internal Server Error"
+		header := "Internal Server Error"
+		message := fmt.Sprintf(htmlTemplate, title, header, body)
+		w.WriteStatusLine(response.StatusCodeInternalError)
+		headers = response.GetDefaultHeaders(len(message))
+		w.WriteHeaders(headers)
+		w.WriteBody([]byte(message))
 	default:
-		w.Write([]byte("All good, frfr\n"))
-		return nil
+		body := "Your request was an absolute banger."
+		title := "200 OK"
+		header := "Success!"
+		message := fmt.Sprintf(htmlTemplate, title, header, body)
+		w.WriteStatusLine(response.StatusCodeOk)
+		headers = response.GetDefaultHeaders(len(message))
+		w.WriteHeaders(headers)
+		w.WriteBody([]byte(message))
 	}
 }
