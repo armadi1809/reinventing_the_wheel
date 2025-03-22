@@ -55,6 +55,14 @@ func (h Headers) Set(key, val string) {
 	}
 }
 
+func (h Headers) Override(key, val string) {
+	h[strings.ToLower(key)] = val
+}
+
+func (h Headers) Remove(key string) {
+	delete(h, strings.ToLower(key))
+}
+
 func isHeaderKeyValid(val string) bool {
 	if len(val) == 0 {
 		return false

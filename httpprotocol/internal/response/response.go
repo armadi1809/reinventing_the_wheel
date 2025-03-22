@@ -11,7 +11,7 @@ import (
 type StatusCode int
 
 type Writer struct {
-	Writer io.Writer
+	writer io.Writer
 }
 
 const (
@@ -20,17 +20,55 @@ const (
 	StatusCodeInternalError StatusCode = 500
 )
 
+func NewWriter(w io.Writer) *Writer {
+	return &Writer{
+		writer: w,
+	}
+}
+
 func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
-	_, err := WriteStatusLine(w.Writer, statusCode)
+	_, err := WriteStatusLine(w.writer, statusCode)
 	return err
 }
 
 func (w *Writer) WriteHeaders(headers headers.Headers) error {
-	return WriteHeaders(w.Writer, headers)
+	return WriteHeaders(w.writer, headers)
 }
 
 func (w *Writer) WriteBody(p []byte) (int, error) {
-	return w.Writer.Write(p)
+	return w.writer.Write(p)
+}
+
+func (w *Writer) WriteChunkedBody(p []byte) (int, error) {
+	chunkSize := len(p)
+
+	nTotal := 0
+	n, err := fmt.Fprintf(w.writer, "%x\r\n", chunkSize)
+	if err != nil {
+		return nTotal, err
+	}
+	nTotal += n
+
+	n, err = w.writer.Write(p)
+	if err != nil {
+		return nTotal, err
+	}
+	nTotal += n
+
+	n, err = w.writer.Write([]byte("\r\n"))
+	if err != nil {
+		return nTotal, err
+	}
+	nTotal += n
+	return nTotal, nil
+}
+
+func (w *Writer) WriteChunkedBodyDone() (int, error) {
+	n, err := w.writer.Write([]byte("0\r\n\r\n"))
+	if err != nil {
+		return n, err
+	}
+	return n, nil
 }
 
 func WriteStatusLine(w io.Writer, statusCode StatusCode) (int, error) {
