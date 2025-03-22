@@ -12,7 +12,7 @@ type StatusCode int
 
 const (
 	StatusCodeOk            StatusCode = 200
-	StatusCodeBadResponse   StatusCode = 400
+	StatusCodeBadRequest    StatusCode = 400
 	StatusCodeInternalError StatusCode = 500
 )
 
@@ -20,7 +20,7 @@ func WriteStatusLine(w io.Writer, statusCode StatusCode) {
 	switch statusCode {
 	case StatusCodeOk:
 		w.Write([]byte("HTTP/1.1 200 OK"))
-	case StatusCodeBadResponse:
+	case StatusCodeBadRequest:
 		w.Write([]byte("HTTP/1.1 400 Bad Request"))
 	case StatusCodeInternalError:
 		w.Write([]byte("HTTP/1.1 500 Internal Server Error"))
@@ -43,6 +43,6 @@ func WriteHeaders(w io.Writer, headers headers.Headers) error {
 			return err
 		}
 	}
-	w.Write([]byte("\r\n"))
-	return nil
+	_, err := w.Write([]byte("\r\n"))
+	return err
 }

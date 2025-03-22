@@ -164,7 +164,6 @@ func (r *Request) parseSingle(data []byte) (int, error) {
 	case requestStateParsingBody:
 		contentLength, err := strconv.Atoi(r.Headers.Get("content-length"))
 		if err != nil {
-			fmt.Printf("%v\n", err)
 			r.state = requestStateDone
 			return len(data), nil
 		}
