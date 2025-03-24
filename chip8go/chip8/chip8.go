@@ -19,7 +19,7 @@ type Chip8 struct {
 	stack       [16]uint16
 	sp          uint16
 	key         [16]byte
-	drawFlag    bool
+	DrawFlag    bool
 }
 
 var fontset []uint8 = []uint8{
@@ -78,7 +78,7 @@ func (chip *Chip8) Initialize() {
 	chip.sound_timer = 0
 
 	// draw clear screen at initialization
-	chip.drawFlag = true
+	chip.DrawFlag = true
 }
 
 func (chip *Chip8) LoadProgram(path string) {
@@ -137,7 +137,7 @@ func (chip *Chip8) EmulateCycle() {
 			for i := range chip.gfx {
 				chip.gfx[i] = 0
 			}
-			chip.drawFlag = true
+			chip.DrawFlag = true
 			chip.pc += 2
 		case 0x000E:
 			// return from subroutine
@@ -269,7 +269,7 @@ func (chip *Chip8) EmulateCycle() {
 				}
 			}
 		}
-		chip.drawFlag = true
+		chip.DrawFlag = true
 		chip.pc += 2
 	case 0xE000:
 		switch chip.opcode & 0x00FF {
