@@ -18,7 +18,7 @@ type Chip8 struct {
 	sound_timer byte
 	stack       [16]uint16
 	sp          uint16
-	key         [16]byte
+	Key         [16]byte
 	DrawFlag    bool
 }
 
@@ -218,9 +218,9 @@ func (chip *Chip8) EmulateCycle() {
 			chip.pc += 2
 		case 0x000A:
 			keyPressed := false
-			for i := range chip.key {
-				if chip.key[i] != 0 {
-					chip.V[(chip.opcode&0x0F00)>>8] = chip.key[i]
+			for i := range chip.Key {
+				if chip.Key[i] != 0 {
+					chip.V[(chip.opcode&0x0F00)>>8] = chip.Key[i]
 					keyPressed = true
 				}
 			}
@@ -274,13 +274,13 @@ func (chip *Chip8) EmulateCycle() {
 	case 0xE000:
 		switch chip.opcode & 0x00FF {
 		case 0x009E:
-			if chip.key[chip.V[(chip.opcode&0x0F00)>>8]] != 0 {
+			if chip.Key[chip.V[(chip.opcode&0x0F00)>>8]] != 0 {
 				chip.pc += 4
 			} else {
 				chip.pc += 2
 			}
 		case 0x00A1:
-			if chip.key[chip.V[(chip.opcode&0x0F00)>>8]] == 0 {
+			if chip.Key[chip.V[(chip.opcode&0x0F00)>>8]] == 0 {
 				chip.pc += 4
 			} else {
 				chip.pc += 2
