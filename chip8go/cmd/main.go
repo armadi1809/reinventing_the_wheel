@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/armadi1809/reinventing_the_wheel/chip8go/chip8"
@@ -41,8 +42,12 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	pixels := getPixelsFromEmulator(g.emulator)
-	screen.WritePixels(pixels)
+	if g.emulator.DrawFlag {
+		fmt.Println("draw in ebiten")
+		pixels := getPixelsFromEmulator(g.emulator)
+		screen.WritePixels(pixels)
+		g.emulator.DrawFlag = false
+	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {

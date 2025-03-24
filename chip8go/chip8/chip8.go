@@ -105,7 +105,6 @@ func (chip *Chip8) EmulateCycle() {
 		chip.pc = chip.opcode & 0x0FFF
 	case 0x1000:
 		chip.pc = chip.opcode & 0x0FFF
-		chip.pc += 2
 	case 0x3000:
 		if uint16(chip.V[(chip.opcode&0x0F00>>8)]) == (chip.opcode & 0x00FF) {
 			chip.pc += 4
@@ -141,7 +140,7 @@ func (chip *Chip8) EmulateCycle() {
 			chip.pc += 2
 		case 0x000E:
 			// return from subroutine
-			chip.sp--
+			chip.sp -= 1
 			chip.pc = chip.stack[chip.sp] + 2
 		default:
 			fmt.Printf("unkown opcode 0x%X\n", chip.opcode)
@@ -298,5 +297,4 @@ func (chip *Chip8) EmulateCycle() {
 		}
 		chip.sound_timer--
 	}
-
 }
