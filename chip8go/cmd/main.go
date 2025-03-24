@@ -19,6 +19,7 @@ type Chip8 struct {
 	stack       [16]uint16
 	sp          uint16
 	key         [16]byte
+	drawFlag    bool
 }
 
 func main() {
@@ -55,10 +56,21 @@ func New() *Chip8 {
 
 func (chip *Chip8) Initialize() {
 	// Clear display
+	for i := range chip.gfx {
+		chip.gfx[i] = 0
+	}
 	// Clear stack
+	for i := range chip.stack {
+		chip.stack[i] = 0
+	}
 	// Clear registers V0-VF
+	for i := range chip.V {
+		chip.V[i] = 0
+	}
 	// Clear memory
-
+	for i := range chip.memory {
+		chip.memory[i] = 0
+	}
 	// Load fontset
 	for i := range 80 {
 		chip.memory[i] = fontset[i] // TODO: Get the chip 8 fontset
@@ -68,6 +80,9 @@ func (chip *Chip8) Initialize() {
 	// Reset timers
 	chip.delay_timer = 0
 	chip.sound_timer = 0
+
+	// draw clear screen at initialization
+	chip.drawFlag = true
 }
 
 func (chip *Chip8) LoadProgram(path string) {
@@ -126,6 +141,7 @@ func (chip *Chip8) EmulateCycle() {
 			for i := range chip.gfx {
 				chip.gfx[i] = 0
 			}
+			chip.drawFlag = true
 			chip.pc += 2
 		case 0x000E:
 			// return from subroutine
@@ -257,6 +273,7 @@ func (chip *Chip8) EmulateCycle() {
 				}
 			}
 		}
+		chip.drawFlag = true
 		chip.pc += 2
 	case 0xE000:
 		switch chip.opcode & 0x00FF {
