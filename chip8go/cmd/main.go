@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/armadi1809/reinventing_the_wheel/chip8go/chip8"
@@ -42,12 +41,9 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	if g.emulator.DrawFlag {
-		fmt.Println("draw in ebiten")
-		pixels := getPixelsFromEmulator(g.emulator)
-		screen.WritePixels(pixels)
-		g.emulator.DrawFlag = false
-	}
+	pixels := getPixelsFromEmulator(g.emulator)
+	screen.WritePixels(pixels)
+	g.emulator.DrawFlag = false
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -73,7 +69,7 @@ func updateKeys(emulator *chip8.Chip8) {
 
 	releasedKeys := inpututil.AppendJustReleasedKeys(nil)
 	for _, key := range releasedKeys {
-		emulator.Key[keyboardToEmulatorMap[key]] = 1
+		emulator.Key[keyboardToEmulatorMap[key]] = 0
 	}
 }
 
