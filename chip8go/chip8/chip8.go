@@ -13,7 +13,7 @@ type Chip8 struct {
 	V           [16]byte
 	I           uint16
 	pc          uint16
-	gfx         [64 * 32]byte
+	Gfx         [64 * 32]byte
 	delay_timer byte
 	sound_timer byte
 	stack       [16]uint16
@@ -52,8 +52,8 @@ func New() *Chip8 {
 
 func (chip *Chip8) Initialize() {
 	// Clear display
-	for i := range chip.gfx {
-		chip.gfx[i] = 0
+	for i := range chip.Gfx {
+		chip.Gfx[i] = 0
 	}
 	// Clear stack
 	for i := range chip.stack {
@@ -134,8 +134,8 @@ func (chip *Chip8) EmulateCycle() {
 		switch chip.opcode & 0x000F {
 		case 0x0000:
 			// clear screen
-			for i := range chip.gfx {
-				chip.gfx[i] = 0
+			for i := range chip.Gfx {
+				chip.Gfx[i] = 0
 			}
 			chip.DrawFlag = true
 			chip.pc += 2
@@ -262,10 +262,10 @@ func (chip *Chip8) EmulateCycle() {
 			pixel = uint16(chip.memory[chip.I+yline])
 			for xline := range uint16(8) {
 				if pixel&(0x80>>xline) != 0 {
-					if chip.gfx[(x+xline+((y+yline)*64))] == 1 {
+					if chip.Gfx[(x+xline+((y+yline)*64))] == 1 {
 						chip.V[0xF] = 1
 					}
-					chip.gfx[(x + xline + ((y + yline) * 64))] ^= 1
+					chip.Gfx[(x + xline + ((y + yline) * 64))] ^= 1
 				}
 			}
 		}

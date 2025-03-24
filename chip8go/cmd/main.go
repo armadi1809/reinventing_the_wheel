@@ -42,12 +42,14 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	if g.emulator.DrawFlag {
-		// TODO get pixels from emulator graphics
+		pixels := getPixelsFromEmulator(g.emulator)
+		screen.WritePixels(pixels)
+		g.emulator.DrawFlag = false
 	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return 160, 120
+	return 64, 32
 }
 
 func main() {
@@ -55,7 +57,8 @@ func main() {
 	ebiten.SetWindowTitle("Chip 8 In Golang")
 	emulator := chip8.New()
 	emulator.Initialize()
-	if err := ebiten.RunGame(&Game{}); err != nil {
+	emulator.LoadProgram("./pong2.c8")
+	if err := ebiten.RunGame(&Game{emulator: emulator}); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -70,4 +73,30 @@ func updateKeys(emulator *chip8.Chip8) {
 	for _, key := range releasedKeys {
 		emulator.Key[keyboardToEmulatorMap[key]] = 1
 	}
+}
+
+func getPixelsFromEmulator(emulator *chip8.Chip8) []byte {
+	width := 64
+	height := 32
+	// Create a slice to hold the RGBA values
+	// Length = width * height * 4 (4 values per pixel: R, G, B, A)
+	rgbaArray := make([]byte, width*height*4)
+	gfx := emulator.Gfx
+	// Fill the array with random RGBA values
+	for i := range len(gfx) {
+		if gfx[i] == 0 {
+			rgbaArray[i*4] = 0
+			rgbaArray[i*4+1] = 0
+			rgbaArray[i*4+2] = 0
+			rgbaArray[i*4+3] = 255
+		} else {
+			rgbaArray[i*4] = 255
+			rgbaArray[i*4+1] = 255
+			rgbaArray[i*4+2] = 255
+			rgbaArray[i*4+3] = 255
+		}
+
+	}
+	return rgbaArray
+
 }
