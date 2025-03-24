@@ -250,22 +250,6 @@ func (chip *Chip8) EmulateCycle() {
 			}
 			chip.pc += 2
 		}
-
-		//for (int yline = 0; yline < height; yline++)
-		// {
-		// 	pixel = memory[I + yline];
-		// 	for(int xline = 0; xline < 8; xline++)
-		// 	{
-		// 		if((pixel & (0x80 >> xline)) != 0)
-		// 		{
-		// 			if(gfx[(x + xline + ((y + yline) * 64))] == 1)
-		// 			{
-		// 				V[0xF] = 1;
-		// 			}
-		// 			gfx[x + xline + ((y + yline) * 64)] ^= 1;
-		// 		}
-		// 	}
-		// }
 	case 0xD000:
 		x := uint16(chip.V[(chip.opcode&0x0F00)>>8])
 		y := uint16(chip.V[(chip.opcode&0x00F0)>>4])

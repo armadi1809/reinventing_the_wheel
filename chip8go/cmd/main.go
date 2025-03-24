@@ -41,11 +41,8 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	if g.emulator.DrawFlag {
-		pixels := getPixelsFromEmulator(g.emulator)
-		screen.WritePixels(pixels)
-		g.emulator.DrawFlag = false
-	}
+	pixels := getPixelsFromEmulator(g.emulator)
+	screen.WritePixels(pixels)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
