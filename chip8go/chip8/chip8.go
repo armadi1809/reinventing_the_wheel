@@ -5,21 +5,23 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"time"
 )
 
 type Chip8 struct {
-	opcode      uint16
-	memory      [4096]byte
-	V           [16]byte
-	I           uint16
-	pc          uint16
-	Gfx         [64 * 32]byte
-	delay_timer byte
-	sound_timer byte
-	stack       [16]uint16
-	sp          uint16
-	Key         [16]byte
-	DrawFlag    bool
+	opcode          uint16
+	memory          [4096]byte
+	V               [16]byte
+	I               uint16
+	pc              uint16
+	Gfx             [64 * 32]byte
+	delay_timer     byte
+	sound_timer     byte
+	stack           [16]uint16
+	sp              uint16
+	Key             [16]byte
+	DrawFlag        bool
+	lastTimerUpdate time.Time
 }
 
 var fontset []uint8 = []uint8{
@@ -80,6 +82,7 @@ func (chip *Chip8) Initialize() {
 	// Reset timers
 	chip.delay_timer = 0
 	chip.sound_timer = 0
+	chip.lastTimerUpdate = time.Now()
 
 	// draw clear screen at initialization
 	chip.DrawFlag = true
@@ -293,15 +296,18 @@ func (chip *Chip8) EmulateCycle() {
 	default:
 		fmt.Printf("unkown opcode 0x%X\n", chip.opcode)
 	}
-
-	if chip.delay_timer > 0 {
-		chip.delay_timer--
-	}
-	if chip.sound_timer > 0 {
-		if chip.sound_timer == 1 {
-			fmt.Printf("SIMULATING SOUND: BEEP\n")
+	currentTime := time.Now()
+	if currentTime.Sub(chip.lastTimerUpdate) >= time.Millisecond*16 {
+		chip.lastTimerUpdate = currentTime
+		if chip.delay_timer > 0 {
+			chip.delay_timer--
 		}
-		chip.sound_timer--
+		if chip.sound_timer > 0 {
+			if chip.sound_timer == 1 {
+				fmt.Printf("SIMULATING SOUND: BEEP\n")
+			}
+			chip.sound_timer--
+		}
 	}
 
 }
