@@ -12,37 +12,42 @@ type Game struct {
 	emulator *chip8.Chip8
 }
 
-var emulatorToKeyboardKeyMap map[int]ebiten.Key = map[int]ebiten.Key{
-	0x1: ebiten.Key1,
-	0x2: ebiten.Key2,
-	0x3: ebiten.Key3,
-	0xC: ebiten.Key4,
+var keyboardToEmulatorMap map[ebiten.Key]int = map[ebiten.Key]int{
+	ebiten.Key1: 0x1,
+	ebiten.Key2: 0x2,
+	ebiten.Key3: 0x3,
+	ebiten.Key4: 0xC,
 
-	0x4: ebiten.KeyQ,
-	0x5: ebiten.KeyW,
-	0x6: ebiten.KeyE,
-	0xD: ebiten.KeyR,
+	ebiten.KeyQ: 0x4,
+	ebiten.KeyW: 0x5,
+	ebiten.KeyE: 0x6,
+	ebiten.KeyR: 0xD,
 
-	0x7: ebiten.KeyA,
-	0x9: ebiten.KeyD,
-	0xE: ebiten.KeyF,
-	0x8: ebiten.KeyS,
+	ebiten.KeyA: 0x7,
+	ebiten.KeyS: 0x8,
+	ebiten.KeyD: 0x9,
+	ebiten.KeyF: 0xE,
 
-	0xA: ebiten.KeyZ,
-	0x0: ebiten.KeyX,
-	0xB: ebiten.KeyC,
+	ebiten.KeyZ: 0xA,
+	ebiten.KeyX: 0x0,
+	ebiten.KeyC: 0xB,
+	ebiten.KeyV: 0xF,
 }
 
 func (g *Game) Update() error {
 	updateKeys(g.emulator)
-	g.emulator.EmulateCycle()
+	for i := 0; i < 10; i++ {
+		g.emulator.EmulateCycle()
+	}
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	pixels := getPixelsFromEmulator(g.emulator)
-	screen.WritePixels(pixels)
-	g.emulator.DrawFlag = false
+	if g.emulator.DrawFlag {
+		pixels := getPixelsFromEmulator(g.emulator)
+		screen.WritePixels(pixels)
+		g.emulator.DrawFlag = false
+	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -61,11 +66,11 @@ func main() {
 }
 
 func updateKeys(emulator *chip8.Chip8) {
-	for key, val := range emulatorToKeyboardKeyMap {
-		if inpututil.IsKeyJustPressed(val) {
-			emulator.Key[key] = 1
-		} else if inpututil.IsKeyJustReleased(val) {
-			emulator.Key[key] = 0
+	for key, val := range keyboardToEmulatorMap {
+		if ebiten.IsKeyPressed(key) || inpututil.IsKeyJustPressed(key) {
+			emulator.Key[val] = 1
+		} else {
+			emulator.Key[val] = 0
 		}
 	}
 }
