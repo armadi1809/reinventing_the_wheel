@@ -12,26 +12,25 @@ type Game struct {
 	emulator *chip8.Chip8
 }
 
-var keyboardToEmulatorMap map[ebiten.Key]int = map[ebiten.Key]int{
-	ebiten.Key1: 0x1,
-	ebiten.Key2: 0x2,
-	ebiten.Key3: 0x3,
-	ebiten.Key4: 0xC,
+var emulatorToKeyboardKeyMap map[int]ebiten.Key = map[int]ebiten.Key{
+	0x1: ebiten.Key1,
+	0x2: ebiten.Key2,
+	0x3: ebiten.Key3,
+	0xC: ebiten.Key4,
 
-	ebiten.KeyQ: 0x4,
-	ebiten.KeyW: 0x5,
-	ebiten.KeyE: 0x6,
-	ebiten.KeyR: 0xD,
+	0x4: ebiten.KeyQ,
+	0x5: ebiten.KeyW,
+	0x6: ebiten.KeyE,
+	0xD: ebiten.KeyR,
 
-	ebiten.KeyA: 0x7,
-	ebiten.KeyS: 0x8,
-	ebiten.KeyD: 0x9,
-	ebiten.KeyF: 0xE,
+	0x7: ebiten.KeyA,
+	0x9: ebiten.KeyD,
+	0xE: ebiten.KeyF,
+	0x8: ebiten.KeyS,
 
-	ebiten.KeyZ: 0xA,
-	ebiten.KeyX: 0x0,
-	ebiten.KeyC: 0xB,
-	ebiten.KeyV: 0xF,
+	0xA: ebiten.KeyZ,
+	0x0: ebiten.KeyX,
+	0xB: ebiten.KeyC,
 }
 
 func (g *Game) Update() error {
@@ -62,14 +61,12 @@ func main() {
 }
 
 func updateKeys(emulator *chip8.Chip8) {
-	pressedKeys := inpututil.AppendJustPressedKeys(nil)
-	for _, key := range pressedKeys {
-		emulator.Key[keyboardToEmulatorMap[key]] = 1
-	}
-
-	releasedKeys := inpututil.AppendJustReleasedKeys(nil)
-	for _, key := range releasedKeys {
-		emulator.Key[keyboardToEmulatorMap[key]] = 0
+	for key, val := range emulatorToKeyboardKeyMap {
+		if inpututil.IsKeyJustPressed(val) {
+			emulator.Key[key] = 1
+		} else if inpututil.IsKeyJustReleased(val) {
+			emulator.Key[key] = 0
+		}
 	}
 }
 

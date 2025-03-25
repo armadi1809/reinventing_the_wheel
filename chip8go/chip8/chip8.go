@@ -72,6 +72,10 @@ func (chip *Chip8) Initialize() {
 		chip.memory[i] = fontset[i]
 
 	}
+	// clear keys
+	for i := range chip.Key {
+		chip.Key[i] = 0
+	}
 
 	// Reset timers
 	chip.delay_timer = 0
