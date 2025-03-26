@@ -11,6 +11,7 @@ import (
 
 type Game struct {
 	emulator *chip8.Chip8
+	pixels   []byte
 }
 
 const clockRate = 10
@@ -47,10 +48,11 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	if g.emulator.DrawFlag {
-		pixels := getPixelsFromEmulator(g.emulator)
-		screen.WritePixels(pixels)
+		g.pixels = getPixelsFromEmulator(g.emulator)
 		g.emulator.DrawFlag = false
 	}
+	screen.WritePixels(g.pixels)
+
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {

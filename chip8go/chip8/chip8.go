@@ -100,11 +100,6 @@ func (chip *Chip8) LoadProgram(path string) {
 }
 
 func (chip *Chip8) EmulateCycle() {
-	// currentTime := time.Now()
-	// if currentTime.Sub(chip.lastTimerUpdate) >= time.Millisecond*16 {
-	// 	chip.lastTimerUpdate = currentTime
-	// 	chip.UpdateTimers()
-	// }
 	chip.opcode = uint16(chip.memory[chip.pc])<<8 | uint16(chip.memory[chip.pc+1])
 	switch chip.opcode & 0xF000 {
 	// perform opcode translation here
@@ -172,7 +167,7 @@ func (chip *Chip8) EmulateCycle() {
 			chip.V[(chip.opcode&0x0F00)>>8] ^= chip.V[(chip.opcode&0x00F0)>>4]
 			chip.pc += 2
 		case 0x0004:
-			if chip.V[(chip.opcode&0x00F0)>>4] > (0xFF - chip.V[(chip.opcode&0x0F00)>>8]) {
+			if chip.V[(chip.opcode&0x00F0)>>4] > 255-(0xFF-chip.V[(chip.opcode&0x0F00)>>8]) {
 				chip.V[0xF] = 1
 			} else {
 				chip.V[0xF] = 0
