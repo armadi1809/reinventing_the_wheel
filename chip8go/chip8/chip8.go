@@ -100,7 +100,11 @@ func (chip *Chip8) LoadProgram(path string) {
 }
 
 func (chip *Chip8) EmulateCycle() {
-	// fmt.Println("Key state:", chip.Key)
+	// currentTime := time.Now()
+	// if currentTime.Sub(chip.lastTimerUpdate) >= time.Millisecond*16 {
+	// 	chip.lastTimerUpdate = currentTime
+	// 	chip.UpdateTimers()
+	// }
 	chip.opcode = uint16(chip.memory[chip.pc])<<8 | uint16(chip.memory[chip.pc+1])
 	switch chip.opcode & 0xF000 {
 	// perform opcode translation here
@@ -296,18 +300,19 @@ func (chip *Chip8) EmulateCycle() {
 	default:
 		fmt.Printf("unkown opcode 0x%X\n", chip.opcode)
 	}
-	currentTime := time.Now()
-	if currentTime.Sub(chip.lastTimerUpdate) >= time.Millisecond*16 {
-		chip.lastTimerUpdate = currentTime
-		if chip.delay_timer > 0 {
-			chip.delay_timer--
-		}
-		if chip.sound_timer > 0 {
-			if chip.sound_timer == 1 {
-				fmt.Printf("SIMULATING SOUND: BEEP\n")
-			}
-			chip.sound_timer--
-		}
-	}
 
+	chip.updateTimers()
+
+}
+
+func (chip *Chip8) updateTimers() {
+	if chip.delay_timer > 0 {
+		chip.delay_timer--
+	}
+	if chip.sound_timer > 0 {
+		if chip.sound_timer == 1 {
+			fmt.Printf("SIMULATING SOUND: BEEP\n")
+		}
+		chip.sound_timer--
+	}
 }

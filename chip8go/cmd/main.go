@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/armadi1809/reinventing_the_wheel/chip8go/chip8"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -11,6 +12,8 @@ import (
 type Game struct {
 	emulator *chip8.Chip8
 }
+
+const clockRate = 10
 
 var keyboardToEmulatorMap map[ebiten.Key]int = map[ebiten.Key]int{
 	ebiten.Key1: 0x1,
@@ -36,7 +39,7 @@ var keyboardToEmulatorMap map[ebiten.Key]int = map[ebiten.Key]int{
 
 func (g *Game) Update() error {
 	updateKeys(g.emulator)
-	for i := 0; i < 10; i++ {
+	for range clockRate {
 		g.emulator.EmulateCycle()
 	}
 	return nil
@@ -55,11 +58,14 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func main() {
+	if len(os.Args) != 2 {
+		log.Fatal("Invalid Arguments. Run the emulator with one rom file path")
+	}
 	ebiten.SetWindowSize(640, 480)
 	ebiten.SetWindowTitle("Chip 8 In Golang")
 	emulator := chip8.New()
 	emulator.Initialize()
-	emulator.LoadProgram("./pong2.c8")
+	emulator.LoadProgram(os.Args[1])
 	if err := ebiten.RunGame(&Game{emulator: emulator}); err != nil {
 		log.Fatal(err)
 	}
