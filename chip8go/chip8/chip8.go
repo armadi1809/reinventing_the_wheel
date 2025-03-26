@@ -271,10 +271,13 @@ func (chip *Chip8) EmulateCycle() {
 			pixel = uint16(chip.memory[chip.I+yline])
 			for xline := range uint16(8) {
 				if (pixel & (0x80 >> xline)) != 0 {
-					if chip.Gfx[(x+xline+((y+yline)*64))%2048] == 1 {
+					xPos := (x + xline) % 64
+					yPos := (y + yline) % 32
+					index := xPos + (yPos * 64)
+					if chip.Gfx[index] == 1 {
 						chip.V[0xF] = 1
 					}
-					chip.Gfx[(x+xline+((y+yline)*64))%2048] ^= 1
+					chip.Gfx[index] ^= 1
 				}
 			}
 		}
@@ -284,7 +287,6 @@ func (chip *Chip8) EmulateCycle() {
 		switch chip.opcode & 0x00FF {
 		case 0x009E:
 			if chip.Key[chip.V[(chip.opcode&0x0F00)>>8]] != 0 {
-				fmt.Println("hereeee key is pressed")
 				chip.pc += 4
 			} else {
 				chip.pc += 2
