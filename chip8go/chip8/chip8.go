@@ -167,36 +167,37 @@ func (chip *Chip8) EmulateCycle() {
 			chip.V[(chip.opcode&0x0F00)>>8] ^= chip.V[(chip.opcode&0x00F0)>>4]
 			chip.pc += 2
 		case 0x0004:
-			if chip.V[(chip.opcode&0x00F0)>>4] > 255-(0xFF-chip.V[(chip.opcode&0x0F00)>>8]) {
-				chip.V[0xF] = 1
-			} else {
-				chip.V[0xF] = 0
+			carry := byte(0)
+			if chip.V[(chip.opcode&0x00F0)>>4] > 0xFF-(0xFF-chip.V[(chip.opcode&0x0F00)>>8]) {
+				carry = 1
 			}
 			chip.V[(chip.opcode&0x0F00)>>8] += chip.V[(chip.opcode&0x00F0)>>4]
+			chip.V[0xF] = carry
 			chip.pc += 2
 		case 0x0005:
-			if chip.V[(chip.opcode&0x00F0)>>4] > chip.V[(chip.opcode&0x0F00)>>8] {
-				chip.V[0xF] = 0
-			} else {
-				chip.V[0xF] = 1
+			borrow := byte(0)
+			if chip.V[(chip.opcode&0x00F0)>>4] <= chip.V[(chip.opcode&0x0F00)>>8] {
+				borrow = 1
 			}
 			chip.V[(chip.opcode&0x0F00)>>8] -= chip.V[(chip.opcode&0x00F0)>>4]
+			chip.V[0xF] = borrow
 			chip.pc += 2
 		case 0x0006:
 			chip.V[0xF] = chip.V[(chip.opcode&0x0F00)>>8] & 0x1
 			chip.V[(chip.opcode&0x0F00)>>8] = chip.V[(chip.opcode&0x0F00)>>8] >> 1
 			chip.pc += 2
 		case 0x0007:
-			if chip.V[(chip.opcode&0x00F0)>>4] < chip.V[(chip.opcode&0x0F00)>>8] {
-				chip.V[0xF] = 0
-			} else {
-				chip.V[0xF] = 1
+			borrow := byte(0)
+			if chip.V[(chip.opcode&0x00F0)>>4] >= chip.V[(chip.opcode&0x0F00)>>8] {
+				borrow = 1
 			}
 			chip.V[(chip.opcode&0x0F00)>>8] = chip.V[(chip.opcode&0x00F0)>>4] - chip.V[(chip.opcode&0x0F00)>>8]
+			chip.V[0xF] = borrow
 			chip.pc += 2
 		case 0x000E:
-			chip.V[0xF] = (chip.V[(chip.opcode&0x0F00)>>8] >> 7) & 0x1
+			msbVal := (chip.V[(chip.opcode&0x0F00)>>8] >> 7) & 0x1
 			chip.V[(chip.opcode&0x0F00)>>8] = chip.V[(chip.opcode&0x0F00)>>8] << 1
+			chip.V[0xF] = msbVal
 			chip.pc += 2
 		}
 
