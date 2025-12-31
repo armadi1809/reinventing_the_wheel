@@ -17,6 +17,8 @@ type Game struct {
 	canvas *ebiten.Image
 }
 
+const SCALE = 10 // defines the velocity scale
+
 func getRandomDirection() (float64, float64) {
 	dir := rand.Intn(4)
 	switch dir {
@@ -33,7 +35,7 @@ func getRandomDirection() (float64, float64) {
 
 func (g *Game) Update() error {
 	vx, vy := getRandomDirection()
-	for range 10 {
+	for range SCALE {
 		g.rectX += vx
 		g.rectY += vy
 		rect := ebiten.NewImage(2, 2)
