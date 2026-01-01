@@ -1,7 +1,7 @@
 # Random Walk
 
 Minimal graphics programming project showing multiple agents performing a random walk using the Ebiten 2D game library for Go.
-This was highly inspired by Daniel Hirsch's [video](https://www.youtube.com/watch?v=ErA4U9WqNCE&t=2575s)video. Daniel is a Youtuber I just discovered and his videos are a gem!
+This was highly inspired by Daniel Hirsch's [video](https://www.youtube.com/watch?v=ErA4U9WqNCE&t=2575s). Daniel is a Youtuber I just discovered and his videos are a gem!
 
 ## Overview
 
