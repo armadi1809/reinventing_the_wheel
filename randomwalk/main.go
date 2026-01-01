@@ -7,20 +7,26 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
+type Agent struct {
+	posX float64
+	posY float64
+	col  color.Color
+}
 type Game struct {
-	rectX  float64
-	rectY  float64
 	canvas *ebiten.Image
+	agents []Agent
 }
 
 const SCALE = 10 // defines the velocity scale
+var rng = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func getRandomDirection() (float64, float64) {
-	dir := rand.Intn(4)
+	dir := rng.Intn(4)
 	switch dir {
 	case 0: // UP
 		return 0, -1
@@ -33,18 +39,25 @@ func getRandomDirection() (float64, float64) {
 	}
 }
 
-func (g *Game) Update() error {
+func (g *Game) UpdateAgent(idx int) {
+	agent := &g.agents[idx]
 	vx, vy := getRandomDirection()
 	for range SCALE {
-		g.rectX += vx
-		g.rectY += vy
+		agent.posX += vx
+		agent.posY += vy
 		rect := ebiten.NewImage(2, 2)
-		rect.Fill(color.White)
+		rect.Fill(agent.col)
 
 		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(float64(g.rectX), float64(g.rectY))
+		op.GeoM.Translate(agent.posX, agent.posY)
 
 		g.canvas.DrawImage(rect, op)
+	}
+}
+
+func (g *Game) Update() error {
+	for i := range g.agents {
+		g.UpdateAgent(i)
 	}
 
 	return nil
@@ -58,14 +71,34 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return 640, 480
 }
 
-func NewGame() *Game {
+func generateRandomColor() color.Color {
+	return color.RGBA{
+		R: uint8(rng.Intn(256)),
+		G: uint8(rng.Intn(256)),
+		B: uint8(rng.Intn(256)),
+		A: 255,
+	}
+}
+
+func NewGame(numAgents int) *Game {
 	canvas := ebiten.NewImage(640, 480)
 	canvas.Fill(color.Black)
 
+	agents := []Agent{}
+
+	for range numAgents {
+		agent := Agent{
+			posX: 320,
+			posY: 240,
+			col:  generateRandomColor(),
+		}
+		agents = append(agents, agent)
+
+	}
+
 	return &Game{
 		canvas: canvas,
-		rectX:  320,
-		rectY:  240,
+		agents: agents,
 	}
 }
 
@@ -85,11 +118,9 @@ func main() {
 		numAgents = customNumAgents
 	}
 
-	fmt.Println(numAgents)
-
 	ebiten.SetWindowSize(640, 480)
-	ebiten.SetWindowTitle(fmt.Sprintf("Hello, agents: %d", numAgents))
-	if err := ebiten.RunGame(NewGame()); err != nil {
+	ebiten.SetWindowTitle(fmt.Sprintf("Random Walk: %d agents", numAgents))
+	if err := ebiten.RunGame(NewGame(numAgents)); err != nil {
 		log.Fatal(err)
 	}
 
