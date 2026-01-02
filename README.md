@@ -12,4 +12,11 @@ This repository is a learning playground: I "reinvent the wheel" by implementing
 - **httpprotocol/** — small experiments around HTTP-like protocol handling and simple servers/clients (see `httpprotocol/cmd`).
 - **randomwalk/** — an Ebiten-based Go demo where multiple agents perform a random walk and leave colored trails (`randomwalk/main.go`).
 
+## Some ideas to implement in the future (non exhaustive)
+
+- reimplement hexdump
+- A physics simulator
+- DNS resolver
+- Minimal lisp interpreter
+
 More experiments and small projects may be added over time; each directory contains an experiment with its own README or source files.
