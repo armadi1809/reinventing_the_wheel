@@ -4,6 +4,7 @@ import (
 	"image/color"
 	"log"
 	"math"
+	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
@@ -89,11 +90,11 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return 640, 480
 }
 
-func NewGame() *Game {
+func NewGame(dataFile string) *Game {
 	canvas := ebiten.NewImage(640, 480)
 	canvas.Fill(color.Black)
 
-	model, err := LoadOBJ("data/teapot.obj")
+	model, err := LoadOBJ(dataFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -110,10 +111,18 @@ func NewGame() *Game {
 
 func main() {
 
+	args := os.Args
+
+	if len(args) != 2 {
+		log.Fatal("Please provide a data file")
+	}
+
+	dataFile := args[1]
+
 	ebiten.SetWindowSize(640, 480)
 	ebiten.SetTPS(60)
 	ebiten.SetWindowTitle("3D Projection Demo")
-	if err := ebiten.RunGame(NewGame()); err != nil {
+	if err := ebiten.RunGame(NewGame(dataFile)); err != nil {
 		log.Fatal(err)
 	}
 
