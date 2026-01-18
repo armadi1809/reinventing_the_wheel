@@ -22,13 +22,13 @@ const HEIGHT = 480
 
 var FOREGROUND_COLOR = color.RGBA{0, 128, 0, 1}
 
-var cubeEdges = []Edge{
-	// Front face
-	{0, 1}, {1, 3}, {3, 2}, {2, 0},
-	// Back face
-	{4, 5}, {5, 7}, {7, 6}, {6, 4},
-	// Connecting edges
-	{0, 4}, {1, 5}, {2, 6}, {3, 7},
+var fs = [][]int{
+	{0, 1, 2, 3},
+	{4, 5, 6, 7},
+	{0, 4},
+	{1, 5},
+	{2, 6},
+	{3, 7},
 }
 
 type Game struct {
@@ -66,26 +66,20 @@ func (g *Game) updateAndDrawPoints() {
 		screenPoints[i] = [2]float64{x, y}
 	}
 
-	for _, edge := range cubeEdges {
-		p1 := screenPoints[edge.from]
-		p2 := screenPoints[edge.to]
-		vector.StrokeLine(g.canvas,
-			float32(p1[0]), float32(p1[1]),
-			float32(p2[0]), float32(p2[1]),
-			2, // stroke width
-			FOREGROUND_COLOR,
-			false, // anti-alias
-		)
-	}
+	for _, f := range fs {
+		for i := range f {
+			a := screenPoints[f[i]]
+			b := screenPoints[f[(i+1)%len(f)]]
 
-	// Draw vertices as circles
-	for _, sp := range screenPoints {
-		vector.FillCircle(g.canvas,
-			float32(sp[0]), float32(sp[1]),
-			5, // radius
-			FOREGROUND_COLOR,
-			false, // anti-alias
-		)
+			vector.StrokeLine(g.canvas,
+				float32(a[0]), float32(a[1]),
+				float32(b[0]), float32(b[1]),
+				2, // stroke width
+				FOREGROUND_COLOR,
+				false, // anti-alias
+			)
+		}
+
 	}
 }
 
@@ -111,13 +105,13 @@ func NewGame() *Game {
 		points: []Point{
 			{0.25, 0.25, 0.25},
 			{-0.25, 0.25, 0.25},
-			{0.25, -0.25, 0.25},
 			{-0.25, -0.25, 0.25},
+			{0.25, -0.25, 0.25},
 
 			{0.25, 0.25, -0.25},
 			{-0.25, 0.25, -0.25},
-			{0.25, -0.25, -0.25},
 			{-0.25, -0.25, -0.25},
+			{0.25, -0.25, -0.25},
 		},
 		dz:    1,
 		angle: 0,
