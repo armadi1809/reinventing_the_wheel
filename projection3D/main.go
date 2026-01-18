@@ -93,7 +93,7 @@ func NewGame() *Game {
 	canvas := ebiten.NewImage(640, 480)
 	canvas.Fill(color.Black)
 
-	model, err := LoadOBJ("penger.obj")
+	model, err := LoadOBJ("data/teapot.obj")
 	if err != nil {
 		log.Fatal(err)
 	}
