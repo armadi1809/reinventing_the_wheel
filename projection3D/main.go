@@ -22,20 +22,12 @@ const HEIGHT = 480
 
 var FOREGROUND_COLOR = color.RGBA{0, 128, 0, 1}
 
-var fs = [][]int{
-	{0, 1, 2, 3},
-	{4, 5, 6, 7},
-	{0, 4},
-	{1, 5},
-	{2, 6},
-	{3, 7},
-}
-
 type Game struct {
 	canvas *ebiten.Image
 	points []Point
 	dz     float64
 	angle  float64
+	faces  [][]int
 }
 
 func screenPosition(x, y float64) (float64, float64) {
@@ -66,7 +58,7 @@ func (g *Game) updateAndDrawPoints() {
 		screenPoints[i] = [2]float64{x, y}
 	}
 
-	for _, f := range fs {
+	for _, f := range g.faces {
 		for i := range f {
 			a := screenPoints[f[i]]
 			b := screenPoints[f[(i+1)%len(f)]]
@@ -100,21 +92,19 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 func NewGame() *Game {
 	canvas := ebiten.NewImage(640, 480)
 	canvas.Fill(color.Black)
+
+	model, err := LoadOBJ("penger.obj")
+	if err != nil {
+		log.Fatal(err)
+	}
+	model.Normalize()
+	model.Scale(1)
 	return &Game{
 		canvas: canvas,
-		points: []Point{
-			{0.25, 0.25, 0.25},
-			{-0.25, 0.25, 0.25},
-			{-0.25, -0.25, 0.25},
-			{0.25, -0.25, 0.25},
-
-			{0.25, 0.25, -0.25},
-			{-0.25, 0.25, -0.25},
-			{-0.25, -0.25, -0.25},
-			{0.25, -0.25, -0.25},
-		},
-		dz:    1,
-		angle: 0,
+		points: model.Points,
+		dz:     1,
+		angle:  0,
+		faces:  model.Faces,
 	}
 }
 
