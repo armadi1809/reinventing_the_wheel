@@ -3,6 +3,7 @@ package main
 import (
 	"image/color"
 	"log"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -20,10 +21,21 @@ type Game struct {
 	canvas *ebiten.Image
 	points []Point
 	dz     float64
+	angle  float64
 }
 
 func screenPosition(x, y float64) (float64, float64) {
 	return (x + 1) * 0.5 * WIDTH, (1 - (y+1)*0.5) * HEIGHT
+}
+
+func rotate_xz(p Point, angle float64) Point {
+	c := math.Cos(angle)
+	s := math.Sin(angle)
+	return Point{
+		x: p.x*c - p.z*s,
+		y: p.y,
+		z: p.x*s + p.z*c,
+	}
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
@@ -32,8 +44,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 func (g *Game) updateAndDrawPoints() {
 	for _, p := range g.points {
-		newZ := p.z + g.dz
-		newX, newY := p.x/newZ, p.y/newZ
+		np := rotate_xz(p, g.angle)
+		newZ := np.z + g.dz
+		newX, newY := np.x/newZ, np.y/newZ
 
 		x, y := screenPosition(newX, newY)
 		size := 10.0
@@ -46,8 +59,10 @@ func (g *Game) updateAndDrawPoints() {
 }
 
 func (g *Game) Update() error {
+	dt := 1 / float64(ebiten.TPS())
+	g.dz += dt
+	g.angle += 2 * math.Pi * dt
 	g.canvas.Clear()
-	g.dz += 1 / float64(ebiten.TPS())
 	g.updateAndDrawPoints()
 
 	return nil
@@ -63,12 +78,18 @@ func NewGame() *Game {
 	return &Game{
 		canvas: canvas,
 		points: []Point{
-			{0.5, 0.5, 0},
-			{-0.5, 0.5, 0},
-			{0.5, -0.5, 0},
-			{-0.5, -0.5, 0},
+			{0.5, 0.5, 0.5},
+			{-0.5, 0.5, 0.5},
+			{0.5, -0.5, 0.5},
+			{-0.5, -0.5, 0.5},
+
+			{0.5, 0.5, -0.5},
+			{-0.5, 0.5, -0.5},
+			{0.5, -0.5, -0.5},
+			{-0.5, -0.5, -0.5},
 		},
-		dz: 0,
+		dz:    1,
+		angle: 0,
 	}
 }
 
