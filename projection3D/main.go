@@ -6,7 +6,9 @@ import (
 	"math"
 	"os"
 
+	"github.com/hajimehoshi/bitmapfont/v4"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
@@ -22,6 +24,8 @@ const WIDTH = 640
 const HEIGHT = 480
 
 var FOREGROUND_COLOR = color.RGBA{0, 128, 0, 1}
+
+var fontFace = text.NewGoXFace(bitmapfont.Face)
 
 type Game struct {
 	canvas *ebiten.Image
@@ -75,6 +79,12 @@ func (g *Game) updateAndDrawPoints() {
 		}
 
 	}
+
+	textOp := &text.DrawOptions{}
+	textOp.LineSpacing = fontFace.Metrics().HLineGap + fontFace.Metrics().HAscent + fontFace.Metrics().HDescent
+	textOp.GeoM.Translate(WIDTH-150, HEIGHT-100)
+	text.Draw(g.canvas, "->: Rotate Right\n<-: Rotate Left", fontFace, textOp)
+
 }
 
 func (g *Game) updateRotationDirection() {
