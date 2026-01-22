@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
@@ -25,13 +24,12 @@ const HEIGHT = 480
 var FOREGROUND_COLOR = color.RGBA{0, 128, 0, 1}
 
 type Game struct {
-	canvas      *ebiten.Image
-	points      []Point
-	dz          float64
-	angle       float64
-	faces       [][]int
-	keys        []ebiten.Key
-	angleFactor float64
+	canvas *ebiten.Image
+	points []Point
+	dz     float64
+	angle  float64
+	faces  [][]int
+	keys   []ebiten.Key
 }
 
 func screenPosition(x, y float64) (float64, float64) {
@@ -79,23 +77,19 @@ func (g *Game) updateAndDrawPoints() {
 	}
 }
 
-func (g *Game) updateRotationDirectionAndSpeed() {
-	g.keys = inpututil.AppendPressedKeys(g.keys[:0])
-	if len(g.keys) > 0 {
-		switch g.keys[0] {
-		case ebiten.KeyArrowUp:
-			g.angleFactor += 0.2
-		case ebiten.KeyArrowDown:
-			g.angleFactor -= 0.2
-		}
-
+func (g *Game) updateRotationDirection() {
+	angleFactor := 0.0
+	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
+		angleFactor = 1.0
+	} else if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
+		angleFactor = -1.0
 	}
 	dt := 1 / float64(ebiten.TPS())
-	g.angle += g.angleFactor * math.Pi * dt
+	g.angle += angleFactor * math.Pi * dt
 }
 
 func (g *Game) Update() error {
-	g.updateRotationDirectionAndSpeed()
+	g.updateRotationDirection()
 	g.canvas.Clear()
 	g.updateAndDrawPoints()
 	return nil
@@ -116,13 +110,11 @@ func NewGame(dataFile string) *Game {
 	model.Normalize()
 	model.Scale(1)
 	return &Game{
-		canvas:      canvas,
-		points:      model.Points,
-		dz:          1,
-		angle:       0,
-		faces:       model.Faces,
-		keys:        []ebiten.Key{},
-		angleFactor: 1,
+		canvas: canvas,
+		points: model.Points,
+		dz:     1,
+		angle:  0,
+		faces:  model.Faces,
 	}
 }
 
