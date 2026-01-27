@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 	"log"
 	"math"
 	"os"
+	"strings"
 
 	"github.com/hajimehoshi/bitmapfont/v4"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -28,12 +30,13 @@ var FOREGROUND_COLOR = color.RGBA{0, 128, 0, 1}
 var fontFace = text.NewGoXFace(bitmapfont.Face)
 
 type Game struct {
-	canvas *ebiten.Image
-	points []Point
-	dz     float64
-	angle  float64
-	faces  [][]int
-	keys   []ebiten.Key
+	canvas  *ebiten.Image
+	points  []Point
+	dz      float64
+	angle   float64
+	faces   [][]int
+	keys    []ebiten.Key
+	objName string
 }
 
 func screenPosition(x, y float64) (float64, float64) {
@@ -85,6 +88,10 @@ func (g *Game) updateAndDrawPoints() {
 	textOp.GeoM.Translate(WIDTH-150, HEIGHT-100)
 	text.Draw(g.canvas, "->: Rotate Right\n<-: Rotate Left", fontFace, textOp)
 
+	textOp.GeoM.Reset()
+	textOp.GeoM.Translate(25, HEIGHT-100)
+	text.Draw(g.canvas, fmt.Sprintf("Data File: %s", g.objName), fontFace, textOp)
+
 }
 
 func (g *Game) updateRotationDirection() {
@@ -120,11 +127,12 @@ func NewGame(dataFile string) *Game {
 	model.Normalize()
 	model.Scale(1)
 	return &Game{
-		canvas: canvas,
-		points: model.Points,
-		dz:     1,
-		angle:  0,
-		faces:  model.Faces,
+		canvas:  canvas,
+		points:  model.Points,
+		dz:      1,
+		angle:   0,
+		faces:   model.Faces,
+		objName: dataFile,
 	}
 }
 
@@ -137,6 +145,9 @@ func main() {
 	}
 
 	dataFile := args[1]
+	if !strings.HasSuffix(dataFile, ".obj") {
+		log.Fatal("Please provide a valid object file")
+	}
 
 	ebiten.SetWindowSize(640, 480)
 	ebiten.SetTPS(60)
