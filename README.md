@@ -9,8 +9,9 @@ This repository is a learning playground: I "reinvent the wheel" by implementing
 
 ## What’s implemented
 
-- **httpprotocol/** — small experiments around HTTP-like protocol handling and simple servers/clients (see `httpprotocol/cmd`).
-- **randomwalk/** — an Ebiten-based Go demo where multiple agents perform a random walk and leave colored trails (`randomwalk/main.go`).
+- **HTTP Protocol** — small experiments around HTTP-like protocol handling and simple servers/clients (see `httpprotocol/`).
+- **Random Walk** — an Ebiten-based Go demo where multiple agents perform a random walk and leave colored trails (see `randomwalk/`).
+- **3D Projection** — a simple 3D projection demo using Ebiten to visualize basic 3D shapes and transformations (see `/projection3D`).
 
 ## Some ideas to implement in the future (non exhaustive)
 
