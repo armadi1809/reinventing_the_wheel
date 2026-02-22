@@ -1,17 +1,40 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+char *next_token(char **command)
+{
+    char *token;
+
+    while ((token = strsep(command, " \t\n")) && !*token)
+        ;
+
+    return token;
+}
 
 int main()
 {
     char *command = NULL;
     while (1)
     {
+        char *token;
+        char *args[100];
+        int i = 0;
         printf("wshell> ");
         size_t command_size = 30;
 
         getline(&command, &command_size, stdin);
+        while ((token = next_token(&command)) != NULL)
+        {
+            args[i++] = token;
+        }
+        args[i] = NULL;
 
-        printf("%s", command);
+        if (args[0] == NULL)
+            continue;
+        if (strcmp(args[0], "exit") == 0)
+            break;
+        execvp(args[0], args);
     }
 
     free(command);
