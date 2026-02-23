@@ -34,10 +34,21 @@ int main()
             continue;
         if (strcmp(args[0], "exit") == 0)
             break;
-        if (fork() == 0)
+        pid_t pid = fork();
+        if (pid < 0)
+        {
+            perror("fork");
+            exit(EXIT_FAILURE);
+        }
+        if (pid == 0)
         {
             execvp(args[0], args);
-            break;
+            perror("command execution failed");
+            exit(EXIT_FAILURE);
+        }
+        else
+        {
+            wait(NULL);
         }
     }
 
