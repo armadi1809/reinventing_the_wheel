@@ -34,7 +34,11 @@ int main()
             continue;
         if (strcmp(args[0], "exit") == 0)
             break;
-        execvp(args[0], args);
+        if (fork() == 0)
+        {
+            execvp(args[0], args);
+            break;
+        }
     }
 
     free(command);
