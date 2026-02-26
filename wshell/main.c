@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 typedef struct
 {
@@ -67,6 +68,8 @@ Command *parseCommand(char *command_str)
     {
         cmd->args[j] = args[j];
     }
+    cmd->redirect_input[0] = -1;
+    cmd->redirect_input[1] = -1;
     return cmd;
 }
 
@@ -90,60 +93,102 @@ Pipeline *parsePipeline(char *line)
     return pipeline;
 }
 
+void close_all_pipes(int n_pipes, int (*pipes)[2])
+{
+    for (int i = 0; i < n_pipes; ++i)
+    {
+        close(pipes[i][0]);
+        close(pipes[i][1]);
+    }
+}
+
+pid_t run_with_redirection(Command *cmd, int n_pipes, int pipes[][2])
+{
+
+    if (cmd->args[0] == NULL)
+        return -1;
+    if (strcmp(cmd->args[0], "exit") == 0)
+        exit(EXIT_SUCCESS);
+    if (strcmp(cmd->args[0], "cd") == 0)
+    {
+        if (cmd->args[1] == NULL)
+        {
+            fprintf(stderr, "cd: expected argument\n");
+        }
+        else
+        {
+            if (chdir(cmd->args[1]) != 0)
+            {
+                perror("cd");
+            }
+        }
+        return -1;
+    }
+    pid_t pid = fork();
+    if (pid < 0)
+    {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+    if (pid == 0)
+    {
+        if (cmd->redirect_input[0] != -1)
+        {
+            dup2(cmd->redirect_input[0], STDIN_FILENO);
+            close(cmd->redirect_input[0]);
+        }
+        if (cmd->redirect_input[1] != -1)
+        {
+            dup2(cmd->redirect_input[1], STDOUT_FILENO);
+            close(cmd->redirect_input[1]);
+        }
+
+        close_all_pipes(n_pipes, pipes);
+        execvp(cmd->program_name, cmd->args);
+        perror("command execution failed");
+        exit(EXIT_FAILURE);
+    }
+    return pid;
+}
+
 int main()
 {
     char *command = NULL;
+    Pipeline *pipeline;
+
     while (1)
     {
-        char *token;
-        char *args[100];
-        int i = 0;
         printf("wshell> ");
         size_t command_size = 30;
 
         getline(&command, &command_size, stdin);
-        while ((token = next_token(&command)) != NULL)
-        {
-            args[i++] = token;
-        }
-        args[i] = NULL;
 
-        if (args[0] == NULL)
-            continue;
-        if (strcmp(args[0], "exit") == 0)
-            break;
-        if (strcmp(args[0], "cd") == 0)
+        pipeline = parsePipeline(command);
+
+        int num_pipes = pipeline->num_commands - 1;
+        int pipes[num_pipes][2];
+
+        for (int i = 1; i < pipeline->num_commands; ++i)
         {
-            if (args[1] == NULL)
-            {
-                fprintf(stderr, "cd: expected argument\n");
-            }
-            else
-            {
-                if (chdir(args[1]) != 0)
-                {
-                    perror("cd");
-                }
-            }
-            continue;
+            pipe(pipes[i - 1]);
+            pipeline->commands[i]->redirect_input[STDIN_FILENO] = pipes[i - 1][0];
+            pipeline->commands[i - 1]->redirect_input[STDOUT_FILENO] = pipes[i - 1][1];
         }
-        pid_t pid = fork();
-        if (pid < 0)
+
+        for (int i = 0; i < pipeline->num_commands; ++i)
         {
-            perror("fork");
-            exit(EXIT_FAILURE);
+            run_with_redirection(pipeline->commands[i], num_pipes, pipes);
         }
-        if (pid == 0)
-        {
-            execvp(args[0], args);
-            perror("command execution failed");
-            exit(EXIT_FAILURE);
-        }
-        else
+
+        close_all_pipes(num_pipes, pipes);
+
+        for (int i = 0; i < pipeline->num_commands; ++i)
         {
             wait(NULL);
         }
     }
 
     free(command);
+    free(pipeline);
+    return 0;
 }
