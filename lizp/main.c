@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "mpc.h"
 
 /* If we are compiling on Windows compile these functions */
 #ifdef _WIN32
-#include <string.h>
 
 static char buffer[2048];
 
@@ -30,6 +30,50 @@ void add_history(char *unused) {}
 #include <editline/readline.h>
 #include <editline/history.h>
 #endif
+
+long eval_op(long x, char *op, long y)
+{
+    if (strcmp("+", op) == 0)
+    {
+        return x + y;
+    }
+    if (strcmp("*", op) == 0)
+    {
+        return x * y;
+    }
+    if (strcmp("/", op) == 0)
+    {
+        return x / y;
+    }
+    if (strcmp("-", op) == 0)
+    {
+        return x - y;
+    }
+
+    return 0;
+}
+
+long eval(mpc_ast_t *t)
+{
+    if (strstr(t->tag, "number"))
+    {
+        return atoi(t->contents);
+    }
+
+    char *op = t->children[1]->contents;
+
+    long x = eval(t->children[2]);
+
+    int i = 3;
+
+    while (strstr(t->children[i]->tag, "expr"))
+    {
+        x = eval_op(x, op, eval(t->children[i]));
+        i++;
+    }
+
+    return x;
+}
 
 int main(int argc, char **argv)
 {
@@ -62,7 +106,8 @@ int main(int argc, char **argv)
 
         if (mpc_parse("<stdin>", input, Lizp, &r))
         {
-            mpc_ast_print(r.output);
+            long result = eval(r.output);
+            printf("%li\n", result);
             mpc_ast_delete(r.output);
         }
         else
