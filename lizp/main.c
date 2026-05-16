@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "mpc.h"
+
 /* If we are compiling on Windows compile these functions */
 #ifdef _WIN32
 #include <string.h>
@@ -32,19 +34,45 @@ void add_history(char *unused) {}
 int main(int argc, char **argv)
 {
 
-    puts("Lispy Version 0.0.0.0.1");
+    mpc_parser_t *Number = mpc_new("number");
+    mpc_parser_t *Operator = mpc_new("operator");
+    mpc_parser_t *Expr = mpc_new("expr");
+    mpc_parser_t *Lizp = mpc_new("lizp");
+
+    mpca_lang(MPCA_LANG_DEFAULT,
+              "                                                     \
+    number   : /-?[0-9]+/ ;                             \
+    operator : '+' | '-' | '*' | '/' ;                  \
+    expr     : <number> | '(' <operator> <expr>+ ')' ;  \
+    lizp    : /^/ <operator> <expr>+ /$/ ;             \
+  ",
+              Number, Operator, Expr, Lizp);
+
+    puts("Lizp Version 0.0.0.0.2");
     puts("Press Ctrl+c to Exit\n");
 
     while (1)
     {
 
         /* Now in either case readline will be correctly defined */
-        char *input = readline("lispy> ");
+        char *input = readline("lizp> ");
         add_history(input);
 
-        printf("No you're a %s\n", input);
+        mpc_result_t r;
+
+        if (mpc_parse("<stdin>", input, Lizp, &r))
+        {
+            mpc_ast_print(r.output);
+            mpc_ast_delete(r.output);
+        }
+        else
+        {
+            mpc_err_print(r.error);
+            mpc_err_delete(r.error);
+        }
         free(input);
     }
 
+    mpc_cleanup(4, Number, Operator, Expr, Lizp);
     return 0;
 }

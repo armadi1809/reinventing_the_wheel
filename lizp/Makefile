@@ -2,4 +2,4 @@
 
 
 build: main.c
-	gcc -std=c99 -Wall main.c -lreadline -o prompt
+	gcc -std=c99 -Wall main.c mpc.c -lreadline -lm -o parsing
