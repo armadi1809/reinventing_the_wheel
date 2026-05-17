@@ -48,7 +48,10 @@ typedef struct
 {
     int type;
     long num;
-    int err;
+    char *err;
+    char *sym;
+    int count;
+    struct lval **cell;
 } lval;
 
 lval lval_num(long x)
@@ -163,18 +166,20 @@ int main(int argc, char **argv)
 {
 
     mpc_parser_t *Number = mpc_new("number");
-    mpc_parser_t *Operator = mpc_new("operator");
+    mpc_parser_t *Symbol = mpc_new("symbol");
+    mpc_parser_t *Sexpr = mpc_new("sexpr");
     mpc_parser_t *Expr = mpc_new("expr");
     mpc_parser_t *Lizp = mpc_new("lizp");
 
     mpca_lang(MPCA_LANG_DEFAULT,
               "                                                     \
     number   : /-?[0-9]+/ ;                             \
-    operator : '+' | '-' | '*' | '/' ;                  \
-    expr     : <number> | '(' <operator> <expr>+ ')' ;  \
-    lizp    : /^/ <operator> <expr>+ /$/ ;             \
+    symbol : '+' | '-' | '*' | '/' ;                  \
+    sexpr: '(' <expr>* ')' ;                                     \
+    expr     : <number> | <symbol> | <sexpr> ;  \
+    lizp    : /^/ <expr>* /$/ ; ;             \
   ",
-              Number, Operator, Expr, Lizp);
+              Number, Symbol, Sexpr, Expr, Lizp);
 
     puts("Lizp Version 0.0.0.0.3");
     puts("Press Ctrl+c to Exit\n");
@@ -202,6 +207,6 @@ int main(int argc, char **argv)
         free(input);
     }
 
-    mpc_cleanup(4, Number, Operator, Expr, Lizp);
+    mpc_cleanup(4, Number, Symbol, Sexpr, Expr, Lizp);
     return 0;
 }
