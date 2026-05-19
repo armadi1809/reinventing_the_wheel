@@ -50,6 +50,7 @@ typedef struct lval
 } lval;
 
 void lval_print(lval *v);
+lval *lval_eval(lval *v);
 
 lval *lval_num(long x)
 {
@@ -122,6 +123,121 @@ lval *lval_add(lval *x, lval *v)
     x->cell = realloc(x->cell, sizeof(lval *) * x->count);
     x->cell[x->count - 1] = v;
     return x;
+}
+
+lval *lval_pop(lval *v, int i)
+{
+    lval *x = v->cell[i];
+    memmove(&v->cell[i], &v->cell[i + 1],
+            sizeof(lval *) * (v->count - i - 1));
+    v->count--;
+    v->cell = realloc(v->cell, sizeof(lval *) * v->count);
+    return x;
+}
+
+lval *lval_take(lval *v, int i)
+{
+    lval *x = lval_pop(v, i);
+    lval_del(v);
+    return x;
+}
+
+lval *builtin_op(lval *a, char *op)
+{
+    for (int i = 0; i < a->count; i++)
+    {
+        if (a->cell[i]->type != LVAL_NUM)
+        {
+            lval_del(a);
+            return lval_err("Cannot operate on non-number");
+        }
+    }
+
+    lval *x = lval_pop(a, 0);
+    if ((strcmp(op, "-") == 0) && a->count == 0)
+    {
+        x->num = -x->num;
+    }
+
+    while (a->count > 0)
+    {
+
+        /* Pop the next element */
+        lval *y = lval_pop(a, 0);
+
+        if (strcmp(op, "+") == 0)
+        {
+            x->num += y->num;
+        }
+        if (strcmp(op, "-") == 0)
+        {
+            x->num -= y->num;
+        }
+        if (strcmp(op, "*") == 0)
+        {
+            x->num *= y->num;
+        }
+        if (strcmp(op, "/") == 0)
+        {
+            if (y->num == 0)
+            {
+                lval_del(x);
+                lval_del(y);
+                x = lval_err("Division By Zero!");
+                break;
+            }
+            x->num /= y->num;
+        }
+
+        lval_del(y);
+    }
+
+    lval_del(a);
+    return x;
+}
+lval *lval_eval_sexpre(lval *v)
+{
+    for (int i = 0; i < v->count; i++)
+    {
+        v->cell[i] = lval_eval(v->cell[i]);
+    }
+
+    for (int i = 0; i < v->count; i++)
+    {
+        if (v->cell[i]->type == LVAL_ERR)
+        {
+            return lval_take(v, i);
+        }
+    }
+
+    if (v->count == 0)
+        return v;
+
+    if (v->count == 1)
+        return lval_take(v, 0);
+
+    lval *f = lval_pop(v, 0);
+
+    if (f->type != LVAL_SYM)
+    {
+        lval_del(f);
+        lval_del(v);
+        return lval_err("S-Expression does not start with a symbol");
+    }
+
+    lval *result = builtin_op(v, f->sym);
+    lval_del(f);
+    return result;
+}
+
+lval *lval_eval(lval *v)
+{
+    if (v->type == LVAL_SEXPR)
+    {
+        return lval_eval_sexpre(v);
+    }
+
+    return v;
 }
 
 lval *lval_read(mpc_ast_t *t)
@@ -203,67 +319,6 @@ void lval_println(lval *v)
     putchar('\n');
 }
 
-// lval eval_op(lval x, char *op, lval y)
-// {
-
-//     if (x.type == LVAL_ERR)
-//     {
-//         return x;
-//     }
-
-//     if (y.type == LVAL_ERR)
-//     {
-//         return y;
-//     }
-
-//     if (strcmp("+", op) == 0)
-//     {
-//         return lval_num(x.num + y.num);
-//     }
-//     if (strcmp("*", op) == 0)
-//     {
-//         return lval_num(x.num * y.num);
-//     }
-//     if (strcmp("-", op) == 0)
-//     {
-//         return lval_num(x.num - y.num);
-//     }
-//     if (strcmp("/", op) == 0)
-//     {
-//         if (y.num == 0)
-//         {
-//             return lval_err(LERR_DIV_ZERO);
-//         }
-//         return lval_num(x.num / y.num);
-//     }
-
-//     return lval_err(LERR_BAD_OP);
-// }
-
-// lval eval(mpc_ast_t *t)
-// {
-//     if (strstr(t->tag, "number"))
-//     {
-//         errno = 0;
-//         long x = strtol(t->contents, NULL, 10);
-//         return errno != ERANGE ? lval_num(x) : lval_err(LERR_BAD_NUM);
-//     }
-
-//     char *op = t->children[1]->contents;
-
-//     lval x = eval(t->children[2]);
-
-//     int i = 3;
-
-//     while (strstr(t->children[i]->tag, "expr"))
-//     {
-//         x = eval_op(x, op, eval(t->children[i]));
-//         i++;
-//     }
-
-//     return x;
-// }
-
 int main(int argc, char **argv)
 {
 
@@ -297,8 +352,7 @@ int main(int argc, char **argv)
 
         if (mpc_parse("<stdin>", input, Lizp, &r))
         {
-            // lval result = eval(r.output);
-            lval *x = lval_read(r.output);
+            lval *x = lval_eval(lval_read(r.output));
             lval_println(x);
             lval_del(x);
             mpc_ast_delete(r.output);
