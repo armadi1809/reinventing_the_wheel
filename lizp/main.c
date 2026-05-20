@@ -4,6 +4,13 @@
 
 #include "mpc.h"
 
+#define LASSERT(args, cond, err) \
+    if (!(cond))                 \
+    {                            \
+        lval_del(args);          \
+        return lval_err(err);    \
+    }
+
 /* If we are compiling on Windows compile these functions */
 #ifdef _WIN32
 
@@ -153,6 +160,80 @@ lval *lval_take(lval *v, int i)
     return x;
 }
 
+lval *builtin_head(lval *v)
+{
+    LASSERT(v, v->count == 1, "Invalid argument count for head function");
+    LASSERT(v, v->cell[0]->type == LVAL_QEXPR,
+            "Invalid argument type passed to head function");
+    LASSERT(v, v->cell[0]->count != 0, "Function head passed an empty list");
+
+    lval *x = lval_take(v, 0);
+
+    while (x->count > 1)
+    {
+        lval_del(lval_pop(x, 1));
+    }
+
+    return x;
+}
+
+lval *builtin_tail(lval *v)
+{
+    LASSERT(v, v->count == 1, "Invalid argument count for tail function");
+    LASSERT(v, v->cell[0]->type == LVAL_QEXPR,
+            "Invalid argument type passed to tail function");
+    LASSERT(v, v->cell[0]->count != 0, "Function tail passed an empty list");
+
+    lval *x = lval_take(v, 0);
+    lval_del(lval_pop(x, 0));
+
+    return x;
+}
+
+lval *builtin_list(lval *v)
+{
+    v->type = LVAL_QEXPR;
+    return v;
+}
+
+lval *builtin_eval(lval *v)
+{
+    LASSERT(v, v->count == 1, "Invalid argument count for eval function");
+    LASSERT(v, v->cell[0]->type == LVAL_QEXPR,
+            "Invalid argument type passed to eval function");
+
+    lval *x = lval_take(v, 0);
+    x->type = LVAL_SEXPR;
+    return lval_eval(x);
+}
+
+lval *lval_join(lval *x, lval *y)
+{
+    while (y->count)
+    {
+        x = lval_add(x, lval_pop(y, 0));
+    }
+    lval_del(y);
+    return x;
+}
+
+lval *builtin_join(lval *a)
+{
+    for (int i = 0; i < a->count; i++)
+    {
+        LASSERT(a, a->cell[i]->type == LVAL_QEXPR, "Function join passed incorrect type");
+    }
+
+    lval *x = lval_pop(a, 0);
+
+    while (a->count)
+    {
+        x = lval_join(x, lval_pop(a, 0));
+    }
+    lval_del(a);
+    return x;
+}
+
 lval *builtin_op(lval *a, char *op)
 {
     for (int i = 0; i < a->count; i++)
@@ -206,6 +287,36 @@ lval *builtin_op(lval *a, char *op)
     lval_del(a);
     return x;
 }
+
+lval *builtin(lval *a, char *func)
+{
+    if (strcmp("list", func) == 0)
+    {
+        return builtin_list(a);
+    }
+    if (strcmp("head", func) == 0)
+    {
+        return builtin_head(a);
+    }
+    if (strcmp("tail", func) == 0)
+    {
+        return builtin_tail(a);
+    }
+    if (strcmp("join", func) == 0)
+    {
+        return builtin_join(a);
+    }
+    if (strcmp("eval", func) == 0)
+    {
+        return builtin_eval(a);
+    }
+    if (strstr("+-/*", func))
+    {
+        return builtin_op(a, func);
+    }
+    lval_del(a);
+    return lval_err("Unknown Function!");
+}
 lval *lval_eval_sexpre(lval *v)
 {
     for (int i = 0; i < v->count; i++)
@@ -236,7 +347,7 @@ lval *lval_eval_sexpre(lval *v)
         return lval_err("S-Expression does not start with a symbol");
     }
 
-    lval *result = builtin_op(v, f->sym);
+    lval *result = builtin(v, f->sym);
     lval_del(f);
     return result;
 }
@@ -355,7 +466,8 @@ int main(int argc, char **argv)
     mpca_lang(MPCA_LANG_DEFAULT,
               "                                          \
     number : /-?[0-9]+/ ;                    \
-    symbol : '+' | '-' | '*' | '/' ;         \
+    symbol : \"list\" | \"head\" | \"tail\"                \
+           | \"join\" | \"eval\" | '+' | '-' | '*' | '/' ; \
     sexpr  : '(' <expr>* ')' ;               \
     qexpr  : '{' <expr>* '}' ;               \
     expr   : <number> | <symbol> | <qexpr> | <sexpr>; \
