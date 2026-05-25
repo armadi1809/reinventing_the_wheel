@@ -38,13 +38,19 @@ void add_history(char *unused) {}
 #include <editline/history.h>
 #endif
 
+struct lval;
+struct lenv;
+typedef struct lval lval;
+typedef struct lenv lenv;
+
 enum
 {
     LVAL_NUM,
     LVAL_ERR,
     LVAL_SYM,
     LVAL_SEXPR,
-    LVAL_QEXPR
+    LVAL_QEXPR,
+    LVAL_FUN
 };
 
 typedef struct lval
@@ -53,9 +59,12 @@ typedef struct lval
     long num;
     char *err;
     char *sym;
+    lbuiltin fun;
     int count;
     struct lval **cell;
 } lval;
+
+typedef lval *(*lbuiltin)(lenv *, lval *);
 
 void lval_print(lval *v);
 lval *lval_eval(lval *v);
@@ -104,6 +113,14 @@ lval *lval_qexpr(void)
     return v;
 }
 
+lval *lval_fun(lbuiltin fun)
+{
+    lval *v = malloc(sizeof(lval));
+    v->type = LVAL_FUN;
+    v->fun = fun;
+    return v;
+}
+
 void lval_del(lval *v)
 {
     switch (v->type)
@@ -123,6 +140,8 @@ void lval_del(lval *v)
             free(v->cell[i]);
         }
         free(v->cell);
+        break;
+    case LVAL_FUN:
         break;
     }
     free(v);
@@ -444,7 +463,43 @@ void lval_print(lval *v)
     case LVAL_QEXPR:
         lval_expr_print(v, '{', '}');
         break;
+    case LVAL_FUN:
+        printf("<function>");
+        break;
     }
+}
+
+lval *lval_copy(lval *v)
+{
+    lval *x = malloc(sizeof(lval));
+    x->type = v->type;
+    switch (v->type)
+    {
+    case LVAL_NUM:
+        x->num = v->num;
+        break;
+    case LVAL_FUN:
+        x->fun = v->fun;
+        break;
+    case LVAL_SYM:
+        x->sym = malloc(strlen(v->sym) + 1);
+        strcpy(x->sym, v->sym);
+        break;
+    case LVAL_ERR:
+        x->err = malloc(strlen(v->err) + 1);
+        strcpy(x->err, v->err);
+        break;
+    case LVAL_QEXPR:
+    case LVAL_SEXPR:
+        x->count = v->count;
+        x->cell = malloc(sizeof(lval *) * x->count);
+        for (int i = 0; i < x->count; i++)
+        {
+            x->cell[i] = lval_copy(v->cell[i]);
+        }
+        break;
+    }
+    return x;
 }
 
 void lval_println(lval *v)
