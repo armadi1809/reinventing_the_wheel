@@ -73,6 +73,8 @@ struct lenv
     lval **vals;
 };
 
+static int lizp_should_exit = 0;
+
 void lval_print(lval *v);
 lval *lval_eval(lenv *e, lval *v);
 
@@ -404,8 +406,22 @@ lval *builtin_op(lenv *e, lval *a, char *op)
     return x;
 }
 
+lval *builtin_exit(lenv *e, lval *a)
+{
+    LASSERT(a, a->count == 0, "Function 'exit' takes no arguments");
+    lval_del(a);
+    lizp_should_exit = 1;
+    return lval_sexpr();
+}
+
 lval *lval_eval_sexpre(lenv *e, lval *v)
 {
+    if (v->count == 1 && v->cell[0]->type == LVAL_SYM && strcmp(v->cell[0]->sym, "exit") == 0)
+    {
+        lval_del(lval_pop(v, 0));
+        return builtin_exit(e, v);
+    }
+
     for (int i = 0; i < v->count; i++)
     {
         v->cell[i] = lval_eval(e, v->cell[i]);
@@ -617,6 +633,7 @@ void lenv_add_builtins(lenv *e)
 
     // definition funcs
     lenv_add_builtin(e, "def", builtin_def);
+    lenv_add_builtin(e, "exit", builtin_exit);
 }
 
 int main(int argc, char **argv)
@@ -644,7 +661,7 @@ int main(int argc, char **argv)
     puts("Press Ctrl+c to Exit\n");
     lenv *e = lenv_new();
     lenv_add_builtins(e);
-    while (1)
+    while (!lizp_should_exit)
     {
 
         /* Now in either case readline will be correctly defined */
@@ -668,6 +685,6 @@ int main(int argc, char **argv)
         free(input);
     }
     lenv_del(e);
-    mpc_cleanup(4, Number, Symbol, Sexpr, Qexpr, Expr, Lizp);
+    mpc_cleanup(6, Number, Symbol, Sexpr, Qexpr, Expr, Lizp);
     return 0;
 }
